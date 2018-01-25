@@ -6,7 +6,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var cookieSession = require('cookie-session');
 
-var index = require('./routes/index');
+var subject = require('./routes/subject');
 var user = require('./routes/user');
 
 var app = express();
@@ -25,17 +25,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cookieSession({
     name: 'session',
     keys: ['key1', 'key2'],
-    maxAge: 60 * 1000
+    maxAge: 60 * 60 * 1000
 }));
 
 // login interceptor
 app.use(function(req, res, next) {
-    if (req.session.username && req.session.type) {
+    if (req.session.name && req.session.type && req.session.userId) {
         next();
     } else {
-        if (req.path.match('/user/login')
-        || req.path.match('/user/logout')
-        || req.path.match('/user/register')) {
+        if (req.path.match('/api/user/login')
+        || req.path.match('/api/user/logout')
+        || req.path.match('/api/user/register')) {
             next();
         } else  {
             var err = new Error('请先登录再访问!');
@@ -45,7 +45,7 @@ app.use(function(req, res, next) {
     }
 });
 
-app.use('/api/', index);
+app.use('/api/subject', subject);
 app.use('/api/user', user);
 
 // catch 404 and forward to error handler

@@ -2,69 +2,51 @@ var express = require('express');
 var router = express.Router();
 var DB = require('../utils/db');
 
-
 router.get('/', function (req, res) {
-  var user;
+  var sql;
   if (req.session.type === 'teacher') {
-    //todo query db
-    user = {
-      name: req.session.name,
-      subject: '数学',
-      telephone: '13917043650'
-    }
+    sql = 'select * from teacher where id = ?'
   } else {
-    //todo query db
-    user = {
-      name: req.session.name,
-      school: '香山中学',
-      telephone: '13917043650'
-    }
+    sql = 'select * from student where id = ?'
   }
-  res.status(200).end(JSON.stringify(user));
+
+  DB.query(sql, [req.session.userId], function (results, fields) {
+    if (results && results.length) {
+      res.status(200).end(JSON.stringify(results[0]));
+    } else {
+      res.end(JSON.stringify({status: 'FAILED', message: '不存在此用户！'}));
+    }
+  });
 });
 
 router.post('/login', function (req, res) {
-  if (req.body.name && req.body.password && req.body.type) {
-    var value;
+  if (req.body.telephone && req.body.password && req.body.type) {
     var sql;
     if (req.body.type === 'teacher') {
-      sql = 'select * from teacher where username = ?'
+      sql = 'select * from teacher where telephone = ?'
     } else {
-      sql = 'select * from student where username = ?'
+      sql = 'select * from student where telephone = ?'
     }
 
-    try {
-      DB.connection.connect();
-      DB.connection.query(sql, [req.body.username], function (error, results, fields) {
-        if (error) {
-          throw error;
-        }
-      })
-    } finally {
-      DB.connection.end();
-    }
-
-    // DB.pool.getConnection(function (err, connection) {
-    //   connection.query({
-    //     sql: sql,
-    //     values: [req.body.username]
-    //   }, function (error, results, fields) {
-    //     if (error) {
-    //       throw error;
-    //     }
-    //   })
-    // });
-    var session = {
-      id: 0,
-      username: req.body.username,
-      realname: '',
-      type: req.body.type,
-      signed: true
-    };
-    req.session = session;
-    res.status(200).end(JSON.stringify(session));
+    DB.query(sql, [req.body.telephone], function (results, fileds) {
+      switch (true) {
+        case !results || !results.length:
+          res.end(JSON.stringify({status: 'FAILED', message: '不存在此用户！'}));
+          break;
+        case results[0].password_hash !== req.body.password:
+          res.end(JSON.stringify({status: 'FAILED', message: '密码不正确！'}));
+          break;
+        default:
+          req.session = {
+            userId: results[0].id,
+            name: results[0].name,
+            type: req.body.type
+          };
+          res.end(JSON.stringify({status: 'SUCCESS', message: '登陆成功！'}));
+      }
+    });
   } else {
-    res.status(301).end(JSON.stringify({signed: false}))
+    res.end(JSON.stringify({status: 'FAILED', message: '登录参数不全！'}))
   }
 });
 
@@ -73,70 +55,78 @@ router.post('/logout', function (req, res) {
   res.status(200).end(JSON.stringify({status: 'SUCCEED'}));
 });
 
+router.post('/password-resets', function (req, res) {
+  if (req.body.oldPassword && req.body.newPassword) {
+    var sql = req.session.type === 'teacher'
+      ? 'select * from teacher where id = ?'
+      : 'select * from student where id = ?';
+    var updateSql = req.session.type === 'teacher'
+      ? 'update teacher set password_hash = ? where id = ? and password_hash = ?'
+      : 'update student set password_hash = ? where id = ? and password_hash = ?';
+
+    DB.query(sql,  [req.session.userId], function (results, fields) {
+      if (results && results.length) {
+        if (results[0].password_hash === req.body.oldPassword) {
+          DB.query(updateSql, [req.body.newPassword, req.session.userId, req.body.oldPassword],
+            function (results, fields) {
+            if (results.affectedRows === 1) {
+              res.end(JSON.stringify({status: 'SUCCESS', message: '更新成功!'}));
+            } else {
+              res.end(JSON.stringify({status: 'FAILED', message: '更新失败!'}));
+            }
+          })
+        } else {
+          res.end(JSON.stringify({status: 'FAILED', message: '旧密码不正确！'}));
+        }
+      } else {
+        res.end(JSON.stringify({status: 'FAILED', message: '不存在此用户！'}));
+      }
+    });
+  } else {
+    res.end(JSON.stringify({status: 'FAILED', message: '参数不全！'}))
+  }
+});
+
 router.post('/register', function (req, res) {
-  //todo only a sample: should consider conflict...
-  if (req.body.username && req.body.password && req.body.type) {
+  if (req.body.telephone && req.body.password && req.body.type && req.body.name) {
     var value;
     var sql;
     if (req.body.type === 'teacher') {
       sql = 'insert into teacher set ?';
       value = {
-        username: req.body.username,
-        realname: req.body.realName,
-        subject: req.body.subject,
+        // login info todo: encrypt password
+        telephone: req.body.telephone,
         password_hash: req.body.password,
         salt: '1',
+        // user info
+        name: req.body.name,
+        subject: req.body.subject,
         address: req.body.address || '',
-        telephone: req.body.telephone || '',
+        // metadata
         created_time: new Date(),
         updated_time: new Date()
       };
     } else {
       sql = 'insert into student set ?';
       value = {
-        username: req.body.username,
-        realname: req.body.realName,
-        school: req.body.school,
-        degree: req.body.degree,
+        telephone: req.body.telephone,
         password_hash: req.body.password,
         salt: '1',
+
+        name: req.body.name,
+        school: req.body.school,
+        degree: req.body.degree,
         address: req.body.address || '',
-        telephone: req.body.telephone || '',
+
         created_time: new Date(),
         updated_time: new Date()
       };
     }
-    try {
-      DB.connection.connect();
-      DB.connection.query(sql, value, function (error, results, fields) {
-        if (error) {
-          throw error;
-        }
-      })
-    } finally {
-      DB.connection.end();
-    }
-
-    // DB.pool.getConnection(function (err, connection) {
-    //   if (err) {
-    //     throw err;
-    //   }
-    //   connection.query(sql, value, function (error, results, fields) {
-    //     // And done with the connection.
-    //     connection.release();
-    //     // Handle error after the release.
-    //     if (error) {
-    //       throw error;
-    //     }
-    //   })
-    // });
-    res.status(201).end(JSON.stringify({status: 'SUCCEED'}));
+    DB.update(sql, value, function (results, fields) {
+      res.status(201).end(JSON.stringify({status: 'SUCCEED'}));
+    })
   } else {
-    res.status(500).end(
-      JSON.stringify({
-        status: 'FAILED',
-        message: '姓名密码或者注册类型参数校验错误'
-      }))
+    res.end(JSON.stringify({status: 'FAILED', message: '姓名密码或者注册类型参数校验错误'}));
   }
 });
 
