@@ -4,9 +4,10 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var cookieSession = require('cookie-session');
 
 var index = require('./routes/index');
-var users = require('./routes/users');
+var user = require('./routes/user');
 
 var app = express();
 
@@ -21,13 +22,35 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(cookieSession({
+    name: 'session',
+    keys: ['key1', 'key2'],
+    maxAge: 60 * 1000
+}));
 
-app.use('/', index);
-app.use('/users', users);
+// login interceptor
+app.use(function(req, res, next) {
+    if (req.session.username && req.session.type) {
+        next();
+    } else {
+        if (req.path.match('/user/login')
+        || req.path.match('/user/logout')
+        || req.path.match('/user/register')) {
+            next();
+        } else  {
+            var err = new Error('请先登录再访问!');
+            err.status = 403;
+            next(err);
+        }
+    }
+});
+
+app.use('/api/', index);
+app.use('/api/user', user);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
-  var err = new Error('Not Found');
+  var err = new Error('URL Not Found');
   err.status = 404;
   next(err);
 });
@@ -40,7 +63,8 @@ app.use(function(err, req, res, next) {
 
   // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  //res.render('error');
+  res.end(JSON.stringify({status: 'FAILED', message: err.message}))
 });
 
 module.exports = app;
