@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var DB = require('../utils/db');
+var Json = require('../utils/json');
 
 router.get('/', function (req, res) {
   var sql;
@@ -10,11 +11,15 @@ router.get('/', function (req, res) {
     sql = 'select * from student where id = ?'
   }
 
-  DB.query(sql, [req.session.userId], function (results, fields) {
-    if (results && results.length) {
-      res.status(200).end(JSON.stringify(results[0]));
+  DB.query(sql, [req.session.userId], function (err, results, fields) {
+    if (err) {
+      res.end(Json.toString({status: 'FAILED', message: err.message}))
     } else {
-      res.end(JSON.stringify({status: 'FAILED', message: '不存在此用户！'}));
+      if (results && results.length) {
+        res.status(200).end(Json.toString(results[0]));
+      } else {
+        res.end(Json.toString({status: 'FAILED', message: '不存在此用户！'}));
+      }
     }
   });
 });
@@ -28,31 +33,35 @@ router.post('/login', function (req, res) {
       sql = 'select * from student where telephone = ?'
     }
 
-    DB.query(sql, [req.body.telephone], function (results, fileds) {
-      switch (true) {
-        case !results || !results.length:
-          res.end(JSON.stringify({status: 'FAILED', message: '不存在此用户！'}));
-          break;
-        case results[0].password_hash !== req.body.password:
-          res.end(JSON.stringify({status: 'FAILED', message: '密码不正确！'}));
-          break;
-        default:
-          req.session = {
-            userId: results[0].id,
-            name: results[0].name,
-            type: req.body.type
-          };
-          res.end(JSON.stringify({status: 'SUCCESS', message: '登陆成功！'}));
+    DB.query(sql, [req.body.telephone], function (err, results, fileds) {
+      if (err) {
+        res.end(Json.toString({status: 'FAILED', message: err.message}))
+      } else {
+        switch (true) {
+          case !results || !results.length:
+            res.end(Json.toString({status: 'FAILED', message: '不存在此用户！'}));
+            break;
+          case results[0].password_hash !== req.body.password:
+            res.end(Json.toString({status: 'FAILED', message: '密码不正确！'}));
+            break;
+          default:
+            req.session = {
+              userId: results[0].id,
+              name: results[0].name,
+              type: req.body.type
+            };
+            res.end(Json.toString({status: 'SUCCESS', message: '登陆成功！'}));
+        }
       }
     });
   } else {
-    res.end(JSON.stringify({status: 'FAILED', message: '登录参数不全！'}))
+    res.end(Json.toString({status: 'FAILED', message: '登录参数不全！'}))
   }
 });
 
 router.post('/logout', function (req, res) {
   req.session = null;
-  res.status(200).end(JSON.stringify({status: 'SUCCEED'}));
+  res.status(200).end(Json.toString({status: 'SUCCEED'}));
 });
 
 router.post('/password-resets', function (req, res) {
@@ -64,26 +73,34 @@ router.post('/password-resets', function (req, res) {
       ? 'update teacher set password_hash = ? where id = ? and password_hash = ?'
       : 'update student set password_hash = ? where id = ? and password_hash = ?';
 
-    DB.query(sql,  [req.session.userId], function (results, fields) {
-      if (results && results.length) {
-        if (results[0].password_hash === req.body.oldPassword) {
-          DB.query(updateSql, [req.body.newPassword, req.session.userId, req.body.oldPassword],
-            function (results, fields) {
-            if (results.affectedRows === 1) {
-              res.end(JSON.stringify({status: 'SUCCESS', message: '更新成功!'}));
-            } else {
-              res.end(JSON.stringify({status: 'FAILED', message: '更新失败!'}));
-            }
-          })
-        } else {
-          res.end(JSON.stringify({status: 'FAILED', message: '旧密码不正确！'}));
-        }
+    DB.query(sql, [req.session.userId], function (err, results, fields) {
+      if (err) {
+        res.end(Json.toString({status: 'FAILED', message: err.message}))
       } else {
-        res.end(JSON.stringify({status: 'FAILED', message: '不存在此用户！'}));
+        if (results && results.length) {
+          if (results[0].password_hash === req.body.oldPassword) {
+            DB.query(updateSql, [req.body.newPassword, req.session.userId, req.body.oldPassword],
+              function (err, results, fields) {
+                if (err) {
+                  res.end(Json.toString({status: 'FAILED', message: err.message}))
+                } else {
+                  if (results.affectedRows === 1) {
+                    res.end(Json.toString({status: 'SUCCESS', message: '更新成功!'}));
+                  } else {
+                    res.end(Json.toString({status: 'FAILED', message: '更新失败!'}));
+                  }
+                }
+              })
+          } else {
+            res.end(Json.toString({status: 'FAILED', message: '旧密码不正确！'}));
+          }
+        } else {
+          res.end(Json.toString({status: 'FAILED', message: '不存在此用户！'}));
+        }
       }
     });
   } else {
-    res.end(JSON.stringify({status: 'FAILED', message: '参数不全！'}))
+    res.end(Json.toString({status: 'FAILED', message: '参数不全！'}))
   }
 });
 
@@ -122,11 +139,15 @@ router.post('/register', function (req, res) {
         updated_time: new Date()
       };
     }
-    DB.update(sql, value, function (results, fields) {
-      res.status(201).end(JSON.stringify({status: 'SUCCEED'}));
+    DB.update(sql, value, function (err, results, fields) {
+      if (err) {
+        res.end(Json.toString({status: 'FAILED', message: err.message}))
+      } else {
+        res.status(201).end(Json.toString({status: 'SUCCEED'}));
+      }
     })
   } else {
-    res.end(JSON.stringify({status: 'FAILED', message: '姓名密码或者注册类型参数校验错误'}));
+    res.end(Json.toString({status: 'FAILED', message: '姓名密码或者注册类型参数校验错误'}));
   }
 });
 

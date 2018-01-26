@@ -6,6 +6,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var cookieSession = require('cookie-session');
 
+var schedule = require('./routes/schedule');
 var subject = require('./routes/subject');
 var user = require('./routes/user');
 
@@ -45,6 +46,7 @@ app.use(function(req, res, next) {
     }
 });
 
+app.use('/api/schedule', schedule);
 app.use('/api/subject', subject);
 app.use('/api/user', user);
 
@@ -64,7 +66,7 @@ app.use(function(err, req, res, next) {
   // render the error page
   res.status(err.status || 500);
   //res.render('error');
-  res.end(JSON.stringify({status: 'FAILED', message: err.message}))
+  res.end(Json.toString({status: 'FAILED', message: err.message}))
 });
 
 module.exports = app;
