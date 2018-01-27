@@ -1,0 +1,10 @@
+{
+  // app运行端口
+  "appPort": "3000",
+  // mysql 相关配置
+  "mysqlHost": "10.9.12.180",
+  "mysqlPort": "3306",
+  "mysqlUser": "root",
+  "mysqlPassword": "password",
+  "mysqlDatabase": "braavos"
+}

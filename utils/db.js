@@ -1,12 +1,14 @@
+var config = require('./config');
+
 var DB = {};
 module.exports = DB;
 
 DB.pool = require('mysql').createPool({
-  host: '10.9.12.180',
-  port: '3306',
-  user: 'root',
-  password: 'password',
-  database: 'braavos',
+  host: config.mysqlHost,
+  port: config.mysqlPort,
+  user: config.mysqlUser,
+  password: config.mysqlPassword,
+  database: config.mysqlDatabase,
   connectionLimit: 10
 });
 
