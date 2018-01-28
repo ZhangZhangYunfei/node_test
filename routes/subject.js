@@ -5,7 +5,9 @@ var Json = require('../utils/json');
 
 // 查询老师下某个学生所有课程
 router.get('/', function (req, res, next) {
-  var sql = 'SELECT * FROM subject s WHERE teacher_id = ? AND student_id = ?';
+  var sql = 'SELECT s2.name as student_name, s.* '
+            + 'FROM subject s left join student s2 on s.student_id = s2.id '
+            + 'WHERE teacher_id = ? AND student_id = ?';
   DB.query(sql, [req.session.userId, req.query.studentId], function (err, results, fields) {
     if (err) {
       res.end(Json.toString({status: 'FAILED', message: err.message}))

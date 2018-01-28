@@ -66,6 +66,28 @@ router.get('/', function (req, res) {
   }
 });
 
+// 查询某个课程某个学生的安排
+router.get('/student', function (req, res) {
+  if (req.query.studentId && req.query.subjectId) {
+    var sql = 'SELECT t.name as teacherName, s.name as studentName, t.subject, ss.type, a.* '
+              + 'FROM subject_assignment a '
+              + 'LEFT JOIN teacher t ON a.teacher_id=t.id '
+              + 'LEFT JOIN student s ON a.student_id=s.id '
+              + 'LEFT JOIN subject ss ON a.subject_id=ss.id '
+              + 'WHERE a.teacher_id = ? and a.student_id = ? and a.subject_id = ?'
+    DB.query(sql, [req.session.userId, req.query.studentId, req.query.subjectId],
+      function (err, results, fields) {
+        if (err) {
+          res.end(Json.toString({status: 'FAILED', message: err.message}))
+        } else {
+          res.end(Json.toString(results))
+        }
+      });
+  } else {
+    res.end(Json.toString({status: 'FAILED', message: '参数不全！'}))
+  }
+});
+
 // 创建一个安排
 router.post('/', function (req, res) {
   if (req.session.type === 'teacher'

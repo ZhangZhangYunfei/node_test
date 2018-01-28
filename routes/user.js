@@ -143,7 +143,7 @@ router.post('/register', function (req, res) {
       if (err) {
         res.end(Json.toString({status: 'FAILED', message: err.message}))
       } else {
-        res.status(201).end(Json.toString({status: 'SUCCEED'}));
+        res.status(201).end(Json.toString({status: 'SUCCEED', id: results.insertId}));
       }
     })
   } else {
