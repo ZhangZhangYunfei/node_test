@@ -28,12 +28,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cookieSession({
   name: 'session',
   keys: ['key1', 'key2'],
-  maxAge: 60 * 60 * 1000
+  maxAge: 10 * 1000
 }));
 
 // login interceptor
 app.use(function (req, res, next) {
   if (req.session.name && req.session.type && req.session.userId) {
+    req.session.nowInMinutes = Math.floor(Date.now() / 60e3);
     next();
   } else {
     if (req.path.match('/api/user/login')
