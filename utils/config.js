@@ -7,6 +7,6 @@ function loadJSONFile (file) {
   return JSON.parse(stripJsonComments(json));
 }
 
-var config = loadJSONFile(path.resolve('../config', process.env.NODE_ENV || 'development' + '.json'));
+var config = loadJSONFile(path.resolve('../config', process.env.NODE_ENV + '.json'));
 
 module.exports = config;
