@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 var cookieSession = require('cookie-session');
 var Json = require('./utils/json');
 
+var index = require('./routes/index');
 var assignment = require('./routes/assignment');
 var registration = require('./routes/registration');
 var subject = require('./routes/subject');
@@ -39,7 +40,8 @@ app.use(function (req, res, next) {
   } else {
     if (req.path.match('/api/user/login')
         || req.path.match('/api/user/logout')
-        || req.path.match('/api/user/register')) {
+        || req.path.match('/api/user/register')
+        || req.path.match('/')) {
       next();
     } else {
       var err = new Error('请先登录再访问!');
@@ -49,6 +51,7 @@ app.use(function (req, res, next) {
   }
 });
 
+app.use('/', index);
 app.use('/api/registration', registration);
 app.use('/api/assignment', assignment);
 app.use('/api/subject', subject);
