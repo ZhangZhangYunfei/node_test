@@ -7,6 +7,7 @@ function loadJSONFile (file) {
   return JSON.parse(stripJsonComments(json));
 }
 
-var config = loadJSONFile(path.resolve('../config', process.env.NODE_ENV || 'development' + '.json'));
+// path.resolve 在生产有bug
+var config = loadJSONFile(path.join(__dirname, '../config', process.env.NODE_ENV + '.json'));
 
 module.exports = config;
