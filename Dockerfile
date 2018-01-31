@@ -15,8 +15,8 @@ RUN npm install --only=production
 # Bundle app source
 COPY . .
 
-#代码bug,生产环境找config路径不对
-COPY config /config
+#代码bug,生产环境找config路径不对,path.resolve拼接路径不正确
+#COPY config /config
 
 # Define environment variable
 ENV NODE_ENV development
