@@ -19,7 +19,7 @@ COPY . .
 #COPY config /config
 
 # Define environment variable
-ENV NODE_ENV development
+ENV NODE_ENV production
 
 EXPOSE 3000
 CMD [ "npm", "start" ]

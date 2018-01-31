@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var DB = require('../utils/db');
 var Json = require('../utils/json');
+var log = require('../utils/log');
 
 router.get('/', function (req, res) {
   var sql;

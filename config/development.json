@@ -1,6 +1,6 @@
 {
   // app运行端口
-  "appPort": "3000",
+  "appPort": "3001",
   // mysql 相关配置
   "mysqlHost": "10.9.12.180",
   "mysqlPort": "3306",

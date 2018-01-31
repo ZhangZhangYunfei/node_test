@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var DB = require('../utils/db');
 var Json = require('../utils/json');
+var log = require('../utils/log');
 
 // 创建单个课程报名(老师， 学生， 课程)，如果课程不存在先创建课程后报名
 router.post('/', function (req, res, next) {
