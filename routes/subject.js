@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var DB = require('../utils/db');
 var Json = require('../utils/json');
+var log = require('../utils/log');
 
 router.get('/', function (req, res, next) {
   var sql = 'SELECT s2.name as student_name, s.* '
@@ -38,6 +39,7 @@ router.get('/students', function (req, res, next) {
     if (err) {
       res.end(Json.toString({status: 'FAILED', message: err.message}))
     } else {
+      log.info(Json.toString(results));
       res.end(Json.toString(results));
     }
   });

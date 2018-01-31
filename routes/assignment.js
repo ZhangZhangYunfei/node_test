@@ -2,9 +2,11 @@ var express = require('express');
 var router = express.Router();
 var DB = require('../utils/db');
 var Json = require('../utils/json');
+var log = require('../utils/log');
 
 // 查询某个时间范围的课程安排
 router.get('/', function (req, res) {
+  log.info('Querying the assignment with params %s, %s', req.query.start, req.query.end);
   if (req.query.start && req.query.end) {
     var sql = 'SELECT t.name as teacherName, s.name as studentName, t.subject, ss.type, a.* '
               + 'FROM subject_assignment a '
@@ -22,6 +24,7 @@ router.get('/', function (req, res) {
         if (err) {
           res.end(Json.toString({status: 'FAILED', message: err.message}))
         } else {
+          log.info(Json.toString(results));
           var elements = [];
           for (var row = 1; row < 8; row++) {
             var data = {};
